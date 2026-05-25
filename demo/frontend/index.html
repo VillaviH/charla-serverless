@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tasks App — Serverless AWS</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    :root {
+      --aws-orange: #FF9900;
+      --aws-dark:   #232F3E;
+      --aws-blue:   #1a73e8;
+      --purple:     #7c3aed;
+      --green:      #10b981;
+      --red:        #ef4444;
+      --bg:         #0f1117;
+      --surface:    #1a1d27;
+      --surface2:   #22263a;
+      --border:     rgba(255,255,255,0.07);
+      --text:       #e8eaf0;
+      --muted:      #6b7280;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 48px 16px 32px;
+      color: var(--text);
+    }
+
+    /* ── Fondo animado ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; z-index: -1;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% 10%, rgba(124,58,237,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 80%, rgba(255,153,0,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 60% at 60% 30%, rgba(26,115,232,0.10) 0%, transparent 60%);
+    }
+
+    /* ── Header ── */
+    header { text-align: center; margin-bottom: 40px; }
+
+    .logo {
+      display: inline-flex; align-items: center; gap: 10px;
+      margin-bottom: 12px;
+    }
+    .logo-icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--aws-orange), #ff6b00);
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 20px rgba(255,153,0,0.4);
+    }
+    .logo-text { font-size: 2rem; font-weight: 800; color: var(--text); }
+    .logo-text span { color: var(--aws-orange); }
+
+    header p {
+      color: var(--muted); font-size: 0.88rem; margin-top: 4px;
+      letter-spacing: 0.3px;
+    }
+
+    .badges {
+      display: flex; gap: 8px; justify-content: center; margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-size: 0.7rem; font-weight: 600;
+      padding: 4px 12px; border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    .badge-orange { background: rgba(255,153,0,0.15); color: var(--aws-orange); border: 1px solid rgba(255,153,0,0.3); }
+    .badge-purple { background: rgba(124,58,237,0.15); color: #a78bfa; border: 1px solid rgba(124,58,237,0.3); }
+    .badge-green  { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
+
+    /* ── Arquitectura pills ── */
+    .arch {
+      display: flex; align-items: center; gap: 6px;
+      justify-content: center; margin-top: 18px; flex-wrap: wrap;
+    }
+    .arch-pill {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 8px; padding: 6px 12px;
+      font-size: 0.75rem; font-weight: 600; color: var(--muted);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .arch-pill .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+    }
+    .dot-orange { background: var(--aws-orange); box-shadow: 0 0 6px var(--aws-orange); }
+    .dot-blue   { background: #60a5fa; box-shadow: 0 0 6px #60a5fa; }
+    .dot-purple { background: #a78bfa; box-shadow: 0 0 6px #a78bfa; }
+    .arch-arrow { color: var(--muted); font-size: 0.8rem; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 28px;
+      width: 100%;
+      max-width: 580px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+    }
+
+    /* ── Form ── */
+    .form-row { display: flex; gap: 8px; margin-bottom: 28px; }
+    .form-row input {
+      flex: 1; padding: 12px 16px;
+      background: var(--surface2);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 0.95rem;
+      color: var(--text);
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+    .form-row input::placeholder { color: var(--muted); }
+    .form-row input:focus { border-color: var(--aws-orange); }
+
+    .form-row button {
+      padding: 12px 22px;
+      background: linear-gradient(135deg, var(--aws-orange), #ff6b00);
+      color: white; border: none; border-radius: 10px;
+      font-size: 0.95rem; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+      font-family: inherit;
+      box-shadow: 0 4px 15px rgba(255,153,0,0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .form-row button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(255,153,0,0.5);
+    }
+    .form-row button:active { transform: translateY(0); }
+    .form-row button:disabled {
+      background: var(--surface2); color: var(--muted);
+      box-shadow: none; cursor: not-allowed; transform: none;
+    }
+
+    /* ── Section title ── */
+    .section-title {
+      font-size: 0.7rem; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title::after {
+      content: ''; flex: 1; height: 1px;
+      background: var(--border);
+    }
+
+    /* ── Task list ── */
+    #task-list { list-style: none; }
+
+    .task-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; margin-bottom: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.2s, transform 0.15s;
+    }
+    .task-item:hover { border-color: rgba(255,153,0,0.25); transform: translateX(2px); }
+    .task-item.done-item { opacity: 0.5; }
+
+    /* Custom checkbox */
+    .task-check {
+      appearance: none; -webkit-appearance: none;
+      width: 20px; height: 20px; flex-shrink: 0;
+      border: 2px solid var(--muted);
+      border-radius: 6px; cursor: pointer;
+      position: relative; transition: all 0.2s;
+      background: transparent;
+    }
+    .task-check:checked {
+      background: linear-gradient(135deg, var(--green), #059669);
+      border-color: var(--green);
+      box-shadow: 0 0 10px rgba(16,185,129,0.4);
+    }
+    .task-check:checked::after {
+      content: '✓';
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      color: white; font-size: 0.75rem; font-weight: 700;
+    }
+    .task-check:hover:not(:checked) { border-color: var(--aws-orange); }
+
+    .task-title {
+      flex: 1; font-size: 0.93rem; color: var(--text);
+      cursor: pointer; border-radius: 6px; padding: 2px 6px;
+      transition: color 0.2s, background 0.2s;
+    }
+    .task-title:hover { color: var(--aws-orange); background: rgba(255,153,0,0.08); }
+    .task-title.done { text-decoration: line-through; color: var(--muted); cursor: default; }
+    .task-title.done:hover { background: none; color: var(--muted); }
+
+    .task-edit-input {
+      flex: 1; font-size: 0.93rem; color: var(--text);
+      border: 1.5px solid var(--aws-orange); border-radius: 8px;
+      outline: none; background: rgba(255,153,0,0.08);
+      padding: 4px 10px; font-family: inherit;
+    }
+
+    .btn-save {
+      background: linear-gradient(135deg, var(--green), #059669);
+      color: white; border: none; border-radius: 7px;
+      padding: 5px 12px; font-size: 0.85rem; font-weight: 700;
+      cursor: pointer; font-family: inherit;
+    }
+    .btn-save:hover { filter: brightness(1.1); }
+
+    .btn-cancel {
+      background: none; color: var(--muted); border: none;
+      border-radius: 7px; padding: 5px 8px;
+      font-size: 0.85rem; cursor: pointer; font-family: inherit;
+    }
+    .btn-cancel:hover { color: var(--red); }
+
+    .task-delete {
+      background: none; border: none; color: var(--muted);
+      font-size: 0.9rem; cursor: pointer; padding: 5px 7px;
+      border-radius: 7px; flex-shrink: 0;
+      transition: color 0.2s, background 0.2s;
+    }
+    .task-delete:hover { color: var(--red); background: rgba(239,68,68,0.12); }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center; padding: 40px 0;
+      color: var(--muted); font-size: 0.9rem;
+    }
+    .empty span { display: block; font-size: 2.5rem; margin-bottom: 10px; }
+
+    /* ── Error ── */
+    .error-msg {
+      background: rgba(239,68,68,0.1);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5; border-radius: 10px;
+      padding: 10px 14px; font-size: 0.82rem;
+      margin-bottom: 16px; display: none;
+    }
+
+    /* ── Stats bar ── */
+    .stats {
+      display: flex; gap: 16px; margin-bottom: 20px;
+    }
+    .stat {
+      flex: 1; background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 14px;
+      text-align: center;
+    }
+    .stat-num {
+      font-size: 1.4rem; font-weight: 800;
+      line-height: 1;
+    }
+    .stat-num.orange { color: var(--aws-orange); }
+    .stat-num.green  { color: #34d399; }
+    .stat-num.purple { color: #a78bfa; }
+    .stat-label { font-size: 0.65rem; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    /* ── Spinner ── */
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%; animation: spin 0.6s linear infinite;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Footer ── */
+    footer {
+      margin-top: 24px; font-size: 0.68rem;
+      color: var(--muted); text-align: center;
+    }
+    footer code {
+      background: var(--surface); padding: 3px 8px;
+      border-radius: 5px; color: #60a5fa;
+      word-break: break-all; border: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⚡</div>
+    <div class="logo-text">Tasks <span>App</span></div>
+  </div>
+  <p>Demo en vivo · Universidad de Cuenca · 2026</p>
+  <div class="badges">
+    <span class="badge badge-orange">⚡ Lambda</span>
+    <span class="badge badge-blue" style="background:rgba(26,115,232,0.15);color:#60a5fa;border:1px solid rgba(26,115,232,0.3);">🌐 API Gateway</span>
+    <span class="badge badge-purple">🗄️ DynamoDB</span>
+    <span class="badge badge-green">💰 $0 · Free Tier</span>
+  </div>
+  <div class="arch">
+    <div class="arch-pill"><span class="dot dot-blue"></span>Browser</div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-pill"><span class="dot dot-orange"></span>API Gateway</div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-pill"><span class="dot dot-orange"></span>Lambda</div>
+    <span class="arch-arrow">→</span>
+    <div class="arch-pill"><span class="dot dot-purple"></span>DynamoDB</div>
+  </div>
+</header>
+
+<div class="card">
+  <div id="error-msg" class="error-msg"></div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num orange" id="stat-total">0</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num purple" id="stat-pending">0</div>
+      <div class="stat-label">Pendientes</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num green" id="stat-done">0</div>
+      <div class="stat-label">Completadas</div>
+    </div>
+  </div>
+
+  <div class="form-row">
+    <input id="task-input" type="text" placeholder="¿Qué hay que hacer?" maxlength="120" />
+    <button id="add-btn">+ Agregar</button>
+  </div>
+
+  <div class="section-title">Tareas</div>
+  <ul id="task-list">
+    <li class="empty"><span>📋</span>Cargando...</li>
+  </ul>
+</div>
+
+<footer>API: <code id="api-url-display"></code></footer>
+
+<script>
+  // ── CONFIG — Terraform reemplaza este valor ──
+  const API_URL = 'API_GATEWAY_URL_PLACEHOLDER';
+
+  document.getElementById('api-url-display').textContent = API_URL + '/tasks';
+  document.getElementById('add-btn').addEventListener('click', addTask);
+  document.getElementById('task-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') addTask();
+  });
+
+  loadTasks();
+
+  // ── API helper ──
+  async function api(method, path, body) {
+    const res = await fetch(API_URL + path, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: body !== undefined ? JSON.stringify(body) : undefined
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json();
+  }
+
+  function showError(msg) {
+    const el = document.getElementById('error-msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 4000);
+  }
+
+  function updateStats(tasks) {
+    const total   = tasks.length;
+    const done    = tasks.filter(t => t.completed).length;
+    const pending = total - done;
+    document.getElementById('stat-total').textContent   = total;
+    document.getElementById('stat-pending').textContent = pending;
+    document.getElementById('stat-done').textContent    = done;
+  }
+
+  // ── CRUD ──
+  async function loadTasks() {
+    try {
+      const tasks = await api('GET', '/tasks');
+      const list  = Array.isArray(tasks) ? tasks : [];
+      renderTasks(list);
+      updateStats(list);
+    } catch (e) {
+      showError('No se pudo conectar con la API.');
+      renderTasks([]);
+    }
+  }
+
+  async function addTask() {
+    const input = document.getElementById('task-input');
+    const btn   = document.getElementById('add-btn');
+    const title = input.value.trim();
+    if (!title) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>';
+    try {
+      await api('POST', '/tasks', { title });
+      input.value = '';
+      await loadTasks();
+    } catch (e) {
+      showError('Error al crear la tarea.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '+ Agregar';
+      input.focus();
+    }
+  }
+
+  async function toggleTask(id, title, completed) {
+    try {
+      await api('PUT', `/tasks/${id}`, { title, completed });
+      await loadTasks();
+    } catch (e) {
+      showError('Error al actualizar.');
+    }
+  }
+
+  async function deleteTask(id) {
+    try {
+      await api('DELETE', `/tasks/${id}`);
+      await loadTasks();
+    } catch (e) {
+      showError('Error al eliminar.');
+    }
+  }
+
+  async function saveEdit(id, currentCompleted, input) {
+    const newTitle = input.value.trim();
+    if (!newTitle) { await loadTasks(); return; }
+    try {
+      await api('PUT', `/tasks/${id}`, { title: newTitle, completed: currentCompleted });
+    } catch (e) {
+      showError('Error al guardar.');
+    }
+    await loadTasks();
+  }
+
+  // ── Render ──
+  function renderTasks(tasks) {
+    const list = document.getElementById('task-list');
+
+    if (!tasks.length) {
+      list.innerHTML = '<li class="empty"><span>✨</span>Sin tareas. ¡Agrega la primera arriba!</li>';
+      return;
+    }
+
+    tasks.sort((a, b) => (a.completed ? 1 : 0) - (b.completed ? 1 : 0));
+    list.innerHTML = '';
+
+    tasks.forEach(t => {
+      const li = document.createElement('li');
+      li.className = 'task-item' + (t.completed ? ' done-item' : '');
+      li.id = `item-${t.id}`;
+
+      // Checkbox
+      const chk = document.createElement('input');
+      chk.type      = 'checkbox';
+      chk.className = 'task-check';
+      chk.checked   = !!t.completed;
+      chk.addEventListener('change', () => toggleTask(t.id, t.title, chk.checked));
+
+      // Título
+      const span = document.createElement('span');
+      span.className = 'task-title' + (t.completed ? ' done' : '');
+      span.textContent = t.title;
+      if (!t.completed) {
+        span.addEventListener('click', () => enterEditMode(li, t));
+      }
+
+      // Botón eliminar
+      const del = document.createElement('button');
+      del.className   = 'task-delete';
+      del.textContent = '🗑';
+      del.title       = 'Eliminar';
+      del.addEventListener('click', () => deleteTask(t.id));
+
+      li.appendChild(chk);
+      li.appendChild(span);
+      li.appendChild(del);
+      list.appendChild(li);
+    });
+  }
+
+  function enterEditMode(li, task) {
+    if (li.querySelector('.task-edit-input')) return;
+
+    const span = li.querySelector('.task-title');
+    const del  = li.querySelector('.task-delete');
+
+    const input = document.createElement('input');
+    input.type      = 'text';
+    input.className = 'task-edit-input';
+    input.value     = task.title;
+    input.maxLength = 120;
+
+    const saveBtn = document.createElement('button');
+    saveBtn.className   = 'btn-save';
+    saveBtn.textContent = '✓';
+    saveBtn.title       = 'Guardar';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className   = 'btn-cancel';
+    cancelBtn.textContent = '✕';
+    cancelBtn.title       = 'Cancelar';
+
+    span.replaceWith(input);
+    del.style.display = 'none';
+    li.appendChild(saveBtn);
+    li.appendChild(cancelBtn);
+
+    input.focus();
+    input.select();
+
+    let saving = false;
+
+    saveBtn.addEventListener('click', async () => {
+      if (saving) return; saving = true;
+      await saveEdit(task.id, task.completed, input);
+    });
+
+    cancelBtn.addEventListener('click', () => loadTasks());
+
+    input.addEventListener('keydown', async e => {
+      if (e.key === 'Enter')  { e.preventDefault(); if (saving) return; saving = true; await saveEdit(task.id, task.completed, input); }
+      if (e.key === 'Escape') { loadTasks(); }
+    });
+  }
+</script>
+</body>
+</html>

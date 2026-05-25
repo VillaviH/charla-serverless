@@ -1,0 +1,30 @@
+# Terraform — estado e infraestructura local
+**/.terraform/
+**/.terraform.lock.hcl
+**/terraform.tfstate
+**/terraform.tfstate.backup
+**/terraform.tfstate.*.backup
+**/function.zip
+
+# Variables con secretos (si las usas)
+**/terraform.tfvars
+**/terraform.tfvars.json
+**/*.auto.tfvars
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Archivos de la presentación (no van al repo público)
+slides.html
+GUIA-DEMO.md
+
+# macOS
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
