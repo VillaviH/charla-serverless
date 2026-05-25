@@ -1,8 +1,8 @@
 # Despliega como Senior, paga como estudiante
 ### Serverless en AWS: Lambda + API Gateway + DynamoDB + Terraform
 
-> Código de la charla presentada en la Universidad de Cuenca · 2026  
-> AWS User Group Ecuador
+> Código de la charla presentada para la Universidad de Cuenca · 2026  
+> AWS User Group Quito
 
 ---
 
@@ -100,8 +100,6 @@ BASE_URL=$BASE ../test-api.sh
 
 ```
 charla-serverless/
-├── slides.html                  # Presentación de la charla (abrir en browser)
-├── GUIA-DEMO.md                 # Guía paso a paso del demo en vivo
 └── demo/
     ├── handler.py               # Código de la Lambda — toda la lógica de la API
     ├── test-api.sh              # Script para probar todos los endpoints
@@ -182,5 +180,5 @@ variable "aws_region" {
 ## Autor
 
 **Hernán Villavicencio**  
-AWS User Group Ecuador  
-[linkedin.com/in/TU_PERFIL](https://linkedin.com/in/TU_PERFIL)
+AWS User Group Quito 
+[linkedin.com/in/hvillavicencio](https://linkedin.com/in/hvillavicencio)
